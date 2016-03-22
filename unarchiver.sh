@@ -7,22 +7,20 @@ function unarchiver()
 {
     file=$1
     if [  -d $file ]; then
-        cd $file
-        for i in `ls`; do
+        for i in $file/*
+        do
             unarchiver $i
         done
     elif [[ ${file/'.tar'/} != $file ]]; then
-        tar xzf $file
+        tar xzf $file -C `dirname $file`
         if [ $? -eq 0 ]; then
             rm -fr $file
         fi
         unarchiver ${file%.tar*}
     else
         ((filecount++))
-        while read fileNumber; do
-            echo "get $fileNumber in $file"
-            ((number+=fileNumber))
-        done < $file
+       read fileNumber < $file
+       ((number+=fileNumber))
     fi
 }
 
