@@ -4,12 +4,43 @@ cd `dirname $0` #change the work path into script file path
 
 #prepare final folder
 LIBS=$(pwd)/android/libs
-INCLUDE=$LIBS/include
+#INCLUDE=$LIBS/include
 
-NDK=~/android-sdk-macosx/ndk-bundle
+NDK=~/sdk/android-sdk-linux/ndk-bundle
 
-function build_one
-{
+#for cpu in armeabi arm64-v8a x86 x86_64; do
+for cpu in x86_64; do
+    case "$cpu" in
+        armeabi)
+            CPU=armeabi
+            ARCH=arm
+            SYSROOT=$NDK/platforms/android-21/arch-arm/
+            BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
+            CROSS_PREFIX=$BIN/arm-linux-androideabi-
+        ;;
+        arm64-v8a)
+            SYSROOT=$NDK/platforms/android-21/arch-arm64/
+            CPU=arm64-v8a
+            ARCH=aarch64
+            BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
+            CROSS_PREFIX=$BIN/aarch64-linux-android-
+        ;;
+        x86)
+            SYSROOT=$NDK/platforms/android-21/arch-x86/
+            CPU=x86
+            ARCH=x86
+            BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
+            CROSS_PREFIX=$BIN/i686-linux-android-
+        ;;
+        x86_64)
+            SYSROOT=$NDK/platforms/android-21/arch-x86_64/
+            CPU=x86_64
+            ARCH=x86_64
+            BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
+            CROSS_PREFIX=$BIN/x86_64-linux-android-
+        ;;
+    esac
+
     # clean last build, if any.
     make clean
 
@@ -18,7 +49,6 @@ function build_one
     echo "================================================"
     PREFIX=$(pwd)/build/$CPU
     mkdir -p $PREFIX
-
     ./configure \
         --prefix=$PREFIX \
         --enable-shared \
@@ -37,38 +67,19 @@ function build_one
         --arch=$ARCH \
         --enable-cross-compile \
         --sysroot=$SYSROOT 
-        #--sysroot=$SYSROOT \
-#        --extra-cflags="-Os -fpic $ADDI_CFLAGS" 
-    if [ $? == 0 ]; then
+    if [ $? -eq 0 ]; then
         make clean
-        make -j4 install
-        if [ S? == 0]; then
-            mkdir -p $INCLUDE
-            cp -r $PREFIX/include/* $INCLUDE/
+    	cpuNum=4
+    	buildplatform=`uname -s`
+  	if [ $buildplatform = "Linux" ]; then
+		cupNum=`grep 'processor' /proc/cpuinfo |sort|uniq|wc -l`
+	fi
+        make -j$cpuNum install
+        if [ $? -eq 0 ]; then
+            mkdir -p $LIBS/$CPU
+            cp -r $PREFIX/include $LIBS/$CPU/
             mkdir -p $LIBS/$CPU
             cp -r $PREFIX/lib/* $LIBS/$CPU
         fi
     fi
-}
-
-for cpu in arm64-v8a; do
-    case "$cpu" in
-        armeabi)
-            CPU=armeabi
-            ARCH=arm
-            SYSROOT=$NDK/platforms/android-21/arch-arm/
-            BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
-            CROSS_PREFIX=$BIN/arm-linux-androideabi-
-            ADDI_CFLAGS="-marm"
-        ;;
-        arm64-v8a)
-            SYSROOT=$NDK/platforms/android-21/arch-arm64/
-            CPU=arm64-v8a
-            ARCH=aarch64
-            BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
-            CROSS_PREFIX=$BIN/aarch64-linux-android-
-            ADDI_CFLAGS=""
-        ;;
-    esac
-    build_one
 done
