@@ -1,0 +1,37 @@
+LOCAL_PATH:= $(call my-dir)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libavcodec
+LOCAL_SRC_FILES:= $(LOCAL_PATH)/libs/$(TARGET_ARCH_ABI)/libavcodec.so
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/libs/$(TARGET_ARCH_ABI)/include
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libavformat
+LOCAL_SRC_FILES:= libs/$(TARGET_ARCH_ABI)/libavformat.so
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/libs/$(TARGET_ARCH_ABI)/include
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libswscale
+LOCAL_SRC_FILES:= libs/$(TARGET_ARCH_ABI)/libswscale.so
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/libs/$(TARGET_ARCH_ABI)/include
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libavutil
+LOCAL_SRC_FILES:= libs/$(TARGET_ARCH_ABI)/libavutil.so
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/libs/$(TARGET_ARCH_ABI)/include
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libavfilter
+LOCAL_SRC_FILES:= libs/$(TARGET_ARCH_ABI)/libavfilter.so
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/libs/$(TARGET_ARCH_ABI)/include
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libwsresample
+LOCAL_SRC_FILES:= libs/$(TARGET_ARCH_ABI)/libswresample.so
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/libs/$(TARGET_ARCH_ABI)/include
+include $(PREBUILT_SHARED_LIBRARY)
