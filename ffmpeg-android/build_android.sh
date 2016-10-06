@@ -1,48 +1,51 @@
 #!/bin/sh
 
-NDK=~/sdk/android-sdk-linux/ndk-bundle # NDK path
+NDK=~/android-sdk-macosx/ndk-bundle # NDK path
 platformVersion=android-21 # platform version
 
 scriptPath=`dirname $0`
 cd $scriptPath #change the work path into script file path
 
 #prepare final folder
-LIBS=$(pwd)/android/libs
+LIBS=$(pwd)/ffmpeg-android/libs
 
+if [ ! -e ffmpeg ]; then
+    git clone https://github.com/FFmpeg/FFmpeg.git ffmpeg
+fi
 cd ffmpeg/
 
-#for cpu in armeabi arm64-v8a x86 x86_64; do
-for cpu in armeabi; do
-    ADDI_CFLAGS=""  # only need for arm
-    case "$cpu" in
-        armeabi)
+for ARCH in arm aarch64 x86 x86_64; do
+#for ARCH in aarch64; do
+    hostPlatform=$(uname -s | tr "[:upper:]" "[:lower:]")
+    TOOLCHAIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/$hostPlatform*/`
+
+    ADDI_CFLAGS=""
+    ADDITIONAL_CONFIGURE_FLAG=''
+    
+    case "$ARCH" in
+        arm)
             CPU=armeabi
-            ARCH=arm
             SYSROOT=$NDK/platforms/$platformVersion/arch-arm/
-	    BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
-            CROSS_PREFIX=$BIN/arm-linux-androideabi-
-	    ADDI_CFLAGS="-marm"
+            CROSS_PREFIX=$TOOLCHAIN/bin/arm-linux-androideabi-
+            ADDI_CFLAGS="-marm"
             ;;
-        arm64-v8a)
+        aarch64)
             SYSROOT=$NDK/platforms/$platformVersion/arch-arm64/
             CPU=arm64-v8a
-            ARCH=aarch64
-	    BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
-            CROSS_PREFIX=$BIN/aarch64-linux-android-
+            CROSS_PREFIX=$TOOLCHAIN/bin/aarch64-linux-android-
+            ADDI_CFLAGS="-march=armv8-a"
             ;;
         x86)
             SYSROOT=$NDK/platforms/$platformVersion/arch-x86/
             CPU=x86
-            ARCH=x86
-	    BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
-            CROSS_PREFIX=$BIN/i686-linux-android-
+	         CROSS_PREFIX=$TOOLCHAIN/bin/i686-linux-android-
+            ADDITIONAL_CONFIGURE_FLAG=--disable-yasm
             ;;
         x86_64)
             SYSROOT=$NDK/platforms/$platformVersion/arch-x86_64/
             CPU=x86_64
-            ARCH=x86_64
-	    BIN=`echo $NDK/toolchains/$ARCH-*/prebuilt/*/bin/`
-            CROSS_PREFIX=$BIN/x86_64-linux-android-
+            CROSS_PREFIX=$TOOLCHAIN/bin/x86_64-linux-android-
+            ADDITIONAL_CONFIGURE_FLAG=--disable-yasm
             ;;
     esac
 
@@ -59,30 +62,34 @@ for cpu in armeabi; do
         --disable-programs \
         --disable-avdevice \
         --disable-doc \
-        --disable-symver \
-        --cross-prefix=$CROSS_PREFIX \
-        --target-os=linux \
         --arch=$ARCH \
+        --cross-prefix=$CROSS_PREFIX \
+        --target-os=android \
         --enable-cross-compile \
-	--extra-cflags="-Os -fpic $ADDI_CFLAGS" \
-        --sysroot=$SYSROOT 
+        --sysroot=$SYSROOT \
+        --extra-cflags="-Os -fpic $ADDI_CFLAGS" \
+        $ADDITIONAL_CONFIGURE_FLAG
+
     if [ $? -eq 0 ]; then
         make clean
-    	cpuNum=4
-    	buildplatform=`uname -s`
-  	if [ $buildplatform = "Linux" ]; then
-	    cupNum=`grep 'processor' /proc/cpuinfo |sort|uniq|wc -l`
-	fi
-        make -j$cpuNum install
+    	  cpuNum=4
+    	  buildplatform=`uname -s`
+  	     if [ $buildplatform = "Linux" ]; then
+	         cupNum=`grep 'processor' /proc/cpuinfo |sort|uniq|wc -l`
+	     fi
+        make -j$cpuNum install > /dev/null
         if [ $? -eq 0 ]; then
             mkdir -p $LIBS/$CPU
             cp -r $PREFIX/include $LIBS/$CPU/
             mkdir -p $LIBS/$CPU
             cp -r $PREFIX/lib/* $LIBS/$CPU
-	    # clean for next build
-	    make clean
-	else
-	    exit
+	         # clean for next build
+	         make clean
+	     else
+	         exit
         fi
+        # remove compat o file, as they didn't clean by make clean
+        rm -fr compat/*.o
+
     fi
 done
