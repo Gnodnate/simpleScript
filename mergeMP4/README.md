@@ -11,4 +11,5 @@ $sh mergeMP4.sh directory [output]
 ```
 
 directory: The directory MP4 files put in
+
 output: The final MP4 file name
